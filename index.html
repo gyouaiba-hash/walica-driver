@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ドライブ割り勘アプリ (運転手1 : 同乗者2)</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; color: #333; padding: 20px; max-width: 500px; margin: auto; }
+        .card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; }
+        label { font-weight: bold; margin-top: 10px; display: block; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0 20px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        button { background-color: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button:hover { background-color: #2980b9; }
+        .result { background-color: #e8f8f5; border-left: 5px solid #1abc9c; padding: 15px; border-radius: 5px; margin-top: 20px; display: none; }
+        .result h3 { margin-top: 0; color: #16a085; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🚗 ドライブ割り勘計算</h2>
+    <p style="font-size: 14px; color: #666;">運転手の負担を「1」、同乗者1人あたりの負担を「2」として、傾斜配分で精算します。</p>
+
+    <label>高速代 ＋ ガソリン代の合計 (円):</label>
+    <input type="number" id="totalCost" value="0" placeholder="例: 9000">
+
+    <label>立て替えた人:</label>
+    <select id="payer">
+        <option value="driver">運転手が一括で払った</option>
+        <option value="passenger">同乗者（代表）が払った</option>
+    </select>
+
+    <label>同乗者の人数（運転手を含まない）:</label>
+    <input type="number" id="passengerCount" value="1" min="1">
+
+    <button onclick="calculate()">計算する</button>
+
+    <div id="result" class="result"></div>
+</div>
+
+<script>
+    function calculate() {
+        const totalCost = parseInt(document.getElementById('totalCost').value) || 0;
+        const payer = document.getElementById('payer').value;
+        const passengerCount = parseInt(document.getElementById('passengerCount').value) || 1;
+
+        if (totalCost <= 0) {
+            alert("合計金額を入力してください。");
+            return;
+        }
+
+        // 負担の重み付け（運転手:1, 同乗者1人あたり:2）
+        const totalWeight = 1 + (2 * passengerCount);
+        const unitPrice = totalCost / totalWeight;
+        
+        // それぞれの本来の負担額
+        const driverShare = Math.round(unitPrice * 1);
+        const passengerShare = Math.round(unitPrice * 2);
+
+        let resultHTML = `<h3>💸 計算結果</h3>`;
+        resultHTML += `<p>総額: <strong>${totalCost.toLocaleString()}円</strong></p>`;
+        resultHTML += `<p>運転手の負担: <strong>${driverShare.toLocaleString()}円</strong></p>`;
+        resultHTML += `<p>同乗者(1人あたり)の負担: <strong>${passengerShare.toLocaleString()}円</strong></p><hr>`;
+
+        // 精算の指示
+        if (payer === 'driver') {
+            resultHTML += `<p>✅ <strong>同乗者は、それぞれ ${passengerShare.toLocaleString()}円 を運転手に支払ってください。</strong></p>`;
+        } else {
+            // 同乗者が立て替えた場合（例：代表者が自分のカードで払った）
+            const payerReceives = totalCost - passengerShare; // 立て替えた同乗者が受け取るべき総額
+            resultHTML += `<p>✅ <strong>運転手は立て替えた同乗者に ${driverShare.toLocaleString()}円 を支払ってください。</strong></p>`;
+            if (passengerCount > 1) {
+                resultHTML += `<p>✅ <strong>他の同乗者は、立て替えた同乗者にそれぞれ ${passengerShare.toLocaleString()}円 を支払ってください。</strong></p>`;
+            }
+        }
+
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = resultHTML;
+        resultDiv.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
